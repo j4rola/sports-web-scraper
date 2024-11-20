@@ -1,0 +1,29 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "api/**/*.js",  // This matches any .js files in the api directory
+      "use": "@vercel/node"  // Use Node.js runtime for these files
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",    // Match any requests to /api/*
+      "dest": "/api/$1",     // Route them to the corresponding file in /api
+      "methods": ["GET", "OPTIONS"],  // Allow only GET and OPTIONS requests
+      "headers": {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, OPTIONS",
+        "Access-Control-Allow-Headers": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version"
+      }
+    }
+  ],
+  "env": {
+    // You can define environment variables here
+    // "API_KEY": "@my-api-key"  // Uses Vercel secrets
+  },
+  "regions": ["iad1"],  // Deploy to specific regions (optional)
+  "public": false,      // Whether the source code is public
+  "cleanUrls": true,   // Remove trailing slashes from URLs
+  "trailingSlash": false
+}
