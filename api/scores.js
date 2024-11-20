@@ -1,48 +1,98 @@
-// api/scores.js
 const axios = require('axios');
 const cheerio = require('cheerio');
+const express = require('express');
+const app = express();
+const PORT = 3000;
 
-// Vercel serverless function
-export default async function handler(req, res) {
-    // Set CORS headers
-    res.setHeader('Access-Control-Allow-Credentials', true);
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET');
-    res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
+app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    next();
+});
 
-    if (req.method === 'OPTIONS') {
-        res.status(200).end();
-        return;
-    }
-
+async function scrapeScores() {
     try {
+        console.log('Starting scrape...');
         const response = await axios.get('https://www.espn.com/nba/scoreboard', {
             headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                'Accept-Language': 'en-US,en;q=0.5',
+                'Accept-Encoding': 'gzip, deflate, br',
+                'Connection': 'keep-alive',
+                'Upgrade-Insecure-Requests': '1',
+                'Cache-Control': 'max-age=0'
             }
         });
-
+        
         const $ = cheerio.load(response.data);
+        console.log('Loaded HTML content');
+
+        // Debug endpoint to see available classes
+        const availableClasses = new Set();
+        $('*').each((i, element) => {
+            const classes = $(element).attr('class');
+            if (classes) {
+                classes.split(' ').forEach(c => availableClasses.add(c));
+            }
+        });
+        console.log('Available classes:', Array.from(availableClasses));
+
+        // Try different selectors for scores
         const scores = [];
-
-        $('.ScoreboardScoreCell').each((i, element) => {
-            const teamNames = $(element).find('.ScoreCell_TeamName');
-            const scoreValues = $(element).find('.ScoreCell_Score');
-
-            if (teamNames.length === 2 && scoreValues.length === 2) {
-                scores.push({
-                    homeTeam: $(teamNames[0]).text(),
-                    homeScore: $(scoreValues[0]).text(),
-                    awayTeam: $(teamNames[1]).text(),
-                    awayScore: $(scoreValues[1]).text(),
-                    timestamp: new Date().toISOString()
-                });
+        
+        // Look for game cards
+        $('[class*="score"],[class*="Scorecard"],[class*="Game"]').each((i, element) => {
+            console.log('Found potential game element:', $(element).attr('class'));
+            
+            // Try to extract text content
+            const text = $(element).text();
+            if (text) {
+                console.log('Element text:', text);
             }
         });
 
-        res.status(200).json(scores);
+        return {
+            scores: scores,
+            debugInfo: {
+                availableClasses: Array.from(availableClasses),
+                url: 'https://www.espn.com/nba/scoreboard',
+                timestamp: new Date().toISOString(),
+                htmlPreview: response.data.substring(0, 1000) // First 1000 chars of HTML
+            }
+        };
     } catch (error) {
         console.error('Error scraping scores:', error);
-        res.status(500).json({ error: 'Failed to fetch scores' });
+        return { 
+            error: 'Failed to fetch scores', 
+            details: error.message,
+            stack: error.stack
+        };
     }
 }
+
+// Debug endpoint
+app.get('/api/debug', async (req, res) => {
+    try {
+        const result = await scrapeScores();
+        res.json(result);
+    } catch (error) {
+        res.status(500).json({
+            error: 'Debug endpoint failed',
+            message: error.message,
+            stack: error.stack
+        });
+    }
+});
+
+app.get('/api/scores', async (req, res) => {
+    try {
+        const result = await scrapeScores();
+        res.json(result);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch scores' });
+    }
+});
+
+app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+});
