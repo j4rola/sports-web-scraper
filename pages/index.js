@@ -1,4 +1,3 @@
-// pages/index.js
 import React, { useState, useEffect } from 'react';
 
 export default function Home() {
@@ -28,33 +27,23 @@ export default function Home() {
     }
 
     return (
-        <div>
-            <h1>NBA Scores</h1>
-            {games.map((game, index) => (
-                <div key={index}>
-                    <h2>{game.homeTeam.teamName} vs {game.awayTeam.teamName}</h2>
-                    <p>Score: {game.homeTeam.score} - {game.awayTeam.score}</p>
-                </div>
-            ))}
+        <div style={{ padding: '20px', maxWidth: '800px', margin: '0 auto' }}>
+            <h1 style={{ textAlign: 'center' }}>NBA Scores</h1>
+            {games.length === 0 ? (
+                <div>No games available</div>
+            ) : (
+                games.map((game, index) => (
+                    <div key={index} style={{ 
+                        margin: '10px 0',
+                        padding: '15px',
+                        border: '1px solid #ddd',
+                        borderRadius: '8px'
+                    }}>
+                        <div>{game.homeTeam.teamName} vs {game.awayTeam.teamName}</div>
+                        <div>Score: {game.homeTeam.score} - {game.awayTeam.score}</div>
+                    </div>
+                ))
+            )}
         </div>
     );
-}
-
-// pages/api/scores.js
-import axios from 'axios';
-
-export default async function handler(req, res) {
-    try {
-        const response = await axios.get('https://cdn.nba.com/static/json/liveData/scoreboard/todaysScoreboard_00.json');
-        
-        res.status(200).json({
-            success: true,
-            games: response.data.scoreboard.games
-        });
-    } catch (error) {
-        res.status(500).json({ 
-            success: false, 
-            error: 'Failed to fetch scores' 
-        });
-    }
 }
