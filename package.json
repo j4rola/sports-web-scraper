@@ -1,19 +1,16 @@
 {
   "name": "sports-scraper",
   "version": "1.0.0",
-  "description": "A web scraper for sports scores",
-  "main": "api/scores.js",
   "scripts": {
-    "start": "node api/scores.js",
-    "dev": "nodemon api/scores.js"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
   },
   "dependencies": {
-    "axios": "^1.7.7",
-    "cheerio": "^1.0.0-rc.12",
-    "express": "^4.18.2",
-    "next": "^15.0.3",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "next": "^13.0.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "axios": "^1.6.2"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"
